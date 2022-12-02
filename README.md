@@ -1,6 +1,6 @@
 # AWS-SOLUTIONS-ARCHITECT-LABS
 
-ENABLE SECURITY HUB
+# ENABLE SECURITY HUB
 
 AWS Security Hub gives you a comprehensive view of your high-priority security alerts and compliance status across AWS accounts. 
 There is a range of powerful security tools at your disposal, from firewalls and endpoint protection to vulnerability and compliance scanners. 
@@ -38,7 +38,7 @@ AWS Security Hub requires AWS Config to run within your account.
 If you have not enabled AWS Config, we’ll need to enable that now. 
 If it’s already enabled in your account, you can skip to the next step. Navigate to the AWS Config console and select 1-click setup and then select Confirm.
 
-https://www.wellarchitectedlabs.com/Security/100_Enable_Security_Hub/Images/enable-aws-config.png
+![image](https://user-images.githubusercontent.com/103466963/205345977-1d3dcedd-9d9d-483f-a64b-34c03443e53a.png)
 
 Once successful, you’ll see this Welcome to AWS Config page.
 https://www.wellarchitectedlabs.com/Security/100_Enable_Security_Hub/Images/aws-config-success.png
