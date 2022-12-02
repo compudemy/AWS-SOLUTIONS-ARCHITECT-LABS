@@ -110,6 +110,6 @@ Open the Amazon S3 console at https://console.aws.amazon.com/s3/ .
 Check the box next to the bucket that was created for AWS Config (i.e. “config-bucket-12345”), then click Empty from the menu.
 Confirm the bucket you are emptying.
 Once the bucket is empty check the box next to the bucket, then click Delete from the menu.
-Confirm the bucket you are deleting.
+Confirm the bucket you are deleting
 
 
