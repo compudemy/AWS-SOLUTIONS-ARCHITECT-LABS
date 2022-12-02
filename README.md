@@ -90,6 +90,7 @@ The following instructions will disable AWS Config and Security Hub.
 Disable AWS Config:
 
 Open the AWS Config console at https://console.aws.amazon.com/config/ .
+
 Choose Settings in the navigation pane.
 Select Edit.
 Uncheck Enable Recording.
@@ -99,6 +100,7 @@ Additional details here
 Disable Security Hub:
 
 Open the AWS Security Hub console at https://console.aws.amazon.com/securityhub/ .
+
 In the navigation pane, choose Settings.
 On the Settings page, choose General.
 Under Disable AWS Security Hub, choose Disable AWS Security Hub. Then choose Disabled AWS Security Hub again.
@@ -107,9 +109,12 @@ Additional details here
 Delete the S3 bucket:
 
 Open the Amazon S3 console at https://console.aws.amazon.com/s3/ .
+
 Check the box next to the bucket that was created for AWS Config (i.e. “config-bucket-12345”), then click Empty from the menu.
 Confirm the bucket you are emptying.
+
 Once the bucket is empty check the box next to the bucket, then click Delete from the menu.
+
 Confirm the bucket you are deleting
 
 
