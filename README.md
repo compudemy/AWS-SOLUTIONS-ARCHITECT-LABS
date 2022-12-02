@@ -43,6 +43,7 @@ If it’s already enabled in your account, you can skip to the next step. Naviga
 ![image](https://user-images.githubusercontent.com/103466963/205345977-1d3dcedd-9d9d-483f-a64b-34c03443e53a.png)
 
 Once successful, you’ll see this Welcome to AWS Config page.
+
 ![image](https://user-images.githubusercontent.com/103466963/205346202-be65ca5b-ff66-4239-9bfe-0d6958913831.png)
 
 # 1.2 AWS Security Hub
@@ -51,6 +52,7 @@ Once you have logged into your AWS account and enabled AWS Config, we need to en
 Navigate to the AWS Security Hub console .
 
 Alternatively, you can just search for Security Hub and select the service.
+
 ![image](https://user-images.githubusercontent.com/103466963/205346449-f2dd2d92-4690-4f17-9e28-51cd9da3fe89.png)
 
 # 1.3 Enable AWS Security Hub
