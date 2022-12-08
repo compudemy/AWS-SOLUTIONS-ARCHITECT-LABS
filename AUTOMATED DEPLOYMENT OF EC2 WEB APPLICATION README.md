@@ -75,3 +75,45 @@ For this lab, for the WordPress stack use WebApp1-WordPress or for the static we
 
 ![image](https://user-images.githubusercontent.com/103466963/206485516-4c509729-e98d-42a8-8949-f6116084446d.png)
 
+ALBSGSource: Your current IP address in CIDR notation which will be allowed to connect to the application load balancer, this secures your web application from the public while you are configuring and testing.
+
+![image](https://user-images.githubusercontent.com/103466963/206488659-b840ecc4-da64-47f0-b259-6d6ead1c786f.png)
+
+The remaining parameters may be left as defaults, you can find out more in the description for each.
+
+At the bottom of the page click Next.
+In this lab, we won’t add any tags, permissions or advanced options. Click Next. Tags, which are key-value pairs, can help you identify your stacks. For more information, see Adding Tags to Your AWS CloudFormation Stack .
+Review the information for the stack. When you’re satisfied with the configuration, check I acknowledge that AWS CloudFormation might create IAM resources with custom names then click Create stack.
+
+![image](https://user-images.githubusercontent.com/103466963/206488826-d91588be-c43d-46e3-a726-a886e12f5c76.png)
+
+After a number of minutes the final stack status should change from CREATE_IN_PROGRESS to CREATE_COMPLETE.
+
+![image](https://user-images.githubusercontent.com/103466963/206489006-08d05f28-9957-4431-a873-272b6450fd7b.png)
+
+You have now created the WordPress stack (well actually CloudFormation did it for you).
+
+In the stack click the Outputs tab, and open the WebsiteURL value in your web browser, this is how to access what you just created.
+After you have played and explored with your web application, don’t forget to tear it down to save cost.
+
+Further Considerations
+Enable TLS (SSL) on application load balancer to encrypt communications, using Amazon Certificate Manager.
+WordPress that is deployed stores the database password in clear text in a configuration file and is not rotated, best practice (that is supported by WordPress) would be to encrypt and automatically rotate preferably accessing the Secrets Manager API.
+Use EBS encryption by default to encrypting the EBS volumes for the web instances.
+Implementing a Web Application Firewall such as AWS WAF, and a content delivery service such as Amazon CloudFront to help protect the application.
+Create an automated process for patching the AMI’s and scanning for vulnerabilities before updating in production.
+Create a pipeline that verifies the CloudFormation template for misconfigurations before creating or updating the stack.
+
+# TEAR DOWN THIS LAB
+
+The following instructions will remove the resources that you have created in this lab.
+
+Delete the WordPress or Static Web Application CloudFormation stack:
+
+Sign in to the AWS Management Console, select your preferred region, and open the CloudFormation console at https://console.aws.amazon.com/cloudformation/ .
+Click the radio button on the left of the WebApp1-WordPress or WebApp1-Static stack.
+Click the Actions button then click Delete stack.
+Confirm the stack and then click Delete button.
+Access the Key Management Service (KMS) console https://console.aws.amazon.com/cloudformation/
+
+
