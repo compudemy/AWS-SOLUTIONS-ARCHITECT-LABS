@@ -1,3 +1,5 @@
+  # AUTOMATED DEPLOYMENT OF DETECTIVE CONTROLS 
+
 # Introduction
 
 This hands-on lab will guide you through how to use AWS CloudFormation to automatically configure detective controls including AWS CloudTrail, AWS Config, Amazon GuardDuty, and AWS Security Hub. 
