@@ -1,5 +1,3 @@
-# AWS-SOLUTIONS-ARCHITECT-LABS
-
 # ENABLE SECURITY HUB
 
 AWS Security Hub gives you a comprehensive view of your high-priority security alerts and compliance status across AWS accounts. 
