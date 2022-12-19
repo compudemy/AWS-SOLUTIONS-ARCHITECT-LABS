@@ -65,3 +65,232 @@ Download the CloudFormation template provided in this lab .
 OPTIONAL: Look through the CloudFormation template and comments to see the resources deployed. More information on templates can be found here .
 Go to CloudFormation console , click Create Stack, and select With new resources (standard).
 In the Specify Template menu, choose Upload a template file, then Choose file, and select the security-lab-stack.yaml template you downloaded.
+
+![image](https://user-images.githubusercontent.com/103466963/208153900-b443c1aa-1dbc-4af9-bbfe-270cb4acb473.png)
+
+In the Specify Stack Details menu:
+Enter a stack name, such as security-cw-lab. Note the name down, as you will need to re-visit this stack for Outputs later on.
+Enter your name in the DisplayedName field, this will be the name that appears on your sample website!
+Enter an S3 bucket name in the BucketName field. Amazon S3 bucket names are globally unique, and the namespace is shared by all AWS accounts, so make sure your bucket is names as uniquely as possible. For example: wa-lab-<your-account-id>-<date>.
+Do not modify the LatestAmiId field. This uses a public parameter stored in Systems Manager Parameter Store that will automatically use the latest Amazon Machine Image (AMI) for the EC2 instance.
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208153971-891d8e53-d5b5-4f64-92c4-b8954ee57380.png)
+
+No changes are needed on the Configure Stack Options page. Click through Next.
+
+On the Review page, check the box in the Capabilities section to allow the creation of an IAM role. This selection gives the CloudFormation template permission to create IAM roles - in particular, the role used to allow the EC2 instance to interact with SSM and CloudWatch. Click Create Stack. You will be taken back to the CloudFormation console, where your stack will be launched.
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208154030-e9c22613-8843-4d71-972a-56e87e9974af.png)
+
+Once the stack shows CREATE COMPLETE, click on the Outputs tab and click on the WebsiteURL, you will be brought to your sample web server.
+Recap: In this portion of the lab, you deployed a CloudFormation stack to create the base resources needed for this lab.
+  
+  
+
+  
+# INSTALL THE CLOUDWATCH AGENT
+  
+The CloudWatch agent monitors activity on your EC2 instance to collect logs and metrics. This improves your security posture by providing detailed records you can use to investigate security incidents. The CloudWatch agent needs to be installed on the EC2 instance using AWS Systems Manager Run Command. Run Command enables you to perform actions on EC2 instances remotely. This tool is especially helpful at scale, where you can manage the configuration of many instances with a single command. It is possible to completely automate this process using user data scripts, but that is beyond the scope of this lab.
+
+Open the Systems Manager console .
+Choose Run Command from the left side menu under Instances & Nodes. Click Run Command on the page that opens up.
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208154987-41da9099-0453-4bc6-8cc7-21cc9d92f52e.png)
+
+  In the Command document box, click in the search bar. Select “Document name prefix”, then “Equals”, and enter AWS-ConfigureAWSPackage. Select the command that appears below. This command allows you to install packages on EC2 instances without directly accessing the instance; the AmazonCloudWatchAgent package we will use in this lab is one of these packages.
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208155382-57375eac-2d21-4df8-9609-0bc25e589f6b.png)
+
+  Under Command parameters:
+Set Action to Install
+Set Installation Type to Uninstall and Reinstall
+In the Name field, enter AmazonCloudWatchAgent
+In the Version field, enter latest
+Do not modify the Additional Arguments field
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208155486-70e209ea-aadd-4ab8-bde1-04a535cf2a36.png)
+
+Under Targets:
+Select Choose instances manually.
+For the purpose of this lab, there is only one EC2 Instance you need to run a command on. If you have a large fleet of EC2 instances, you can assign a tag to those instances and choose Specify instance tags to run a command on many tagged instances easily.
+You should see a list of running instances. Select the instance that was launched by the CloudFormation template you deployed for this lab, which will be named Security-CW-Lab-Instance.
+In order to use Systems Manager with an instance, the instance needs certain IAM permissions. The initial CloudFormation stack you deployed created and assigned an IAM role to this instance. The policy document AmazonSSMManagedInstanceCore is attached to this role, allowing Systems Manager to perform operations on the instance.
+
+![image](https://user-images.githubusercontent.com/103466963/208155746-2f2df1cc-d06a-49f6-bff6-19cf267ff004.png)
+
+Under Output Options, deselect Enable writing to an S3 bucket.
+Choose Run.
+Optionally, in the Targets and outputs areas, select the button next to an instance name and choose View output. Systems Manager should show that the agent was successfully installed.
+Recap: In this portion of the lab, you installed the AWS CloudWatch agent on an EC2 Instance using AWS Systems Manager Run Command. Run Command facilitated installing the package on the instance without directly accessing it using SSH - exemplifying the Well-Architected Best Practice of “enabling people to perform actions at a distance” and “reducing attack surface”.
+  
+  
+  
+
+# STORE THE CLOUDWATCH CONFIG FILE IN PARAMETER STORE
+  
+3. Create the CloudWatch Config File with Parameter Store
+You will use Parameter Store, a tool in Systems Manager, to store the CloudWatch agent configuration. Parameter store allows you to securely store configuration data and secrets for reusability. You can re-use configuration data that is well controlled and consistent. In this case, you need to store the configuration file for CloudWatch Agent on your EC2 instance. The CloudWatch agent configuration data specifies which logs and metrics will be sent to CloudWatch as well as the source of this data.
+
+Open the Systems Manager console .
+Choose Parameter Store from the left side menu under Application Management. Choose Create parameter from that screen.
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208156485-97d5fedd-6522-466a-af57-988d8fe95930.png)
+
+  Enter the parameter name AmazonCloudWatch-securitylab-cw-config. You may use a different name, but it must begin with AmazonCloudWatch``- in order to be recognized by CloudWatch as a valid configuration file.
+Give your parameter a description, such as “This is a CloudWatch Agent config file for use in the Well Architected security lab”.
+Set Tier to Standard.
+Set Type to String.
+Set Data type to text.
+In the Value field, copy and paste the contents of the config.json file found in the lab assets. This config file specifies which metrics and logs to collect.
+The agent section specifies which user to run the logs agent as, and how frequently to collect logs.
+The logs section specifies which log files to monitor and which log group and stream to place those logs in. This information can be seen in collect_list. For this lab, you are collecting SSH logs, Apache Web Server logs, and logs for the CloudWatch Agent itself. We will examine these logs more closely in a later step
+The metrics section specifies which metrics are collected (in metrics_collected), the frequency of collection, measurement, and other details.
+To learn more about creating config files, see this link .
+Click Create parameter.
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208156854-cef3a8fe-b7dd-4481-8479-aeb4903c2fab.png)
+
+
+  Recap: In this portion of the lab, you created a re-usable, centrally stored configuration file stored in Amazon Systems Manager Parameter Store. You can re-use configuration data stored in Parameter Store while ensuring that it is consistent and correct across uses. This becomes especially helpful when scaling, as you can re-use configuration files across fleets of instances. This highlights the Well-Architected best practice of “configuring services and resources centrally” by maintaining configuration files centrally in Parameter Store.
+  
+  
+  
+  
+START THE CLOUDWATCH AGENT
+Now that your CloudWatch agent is installed on your EC2 Instance, we need to load the configuration file and restart the CloudWatch agent in order to begin collecting logs. This can be done remotely from the Systems Manager console using Run Command.
+
+Open the Systems Manager console .
+Choose Run command from the left side menu under Instances & Nodes. Click Run Command on the page that opens up.
+In the Command document box, click in the search bar. Select “Document name prefix”, then “equals”, and enter AmazonCloudWatch-ManageAgent. Select the command that appears in the results. This command sends commands directly to the CloudWatch agent on your instances by remotely running scripts on the instance. You will be sending a “configure” command with the created parameter from Parameter Store to instruct the CloudWatch agent installed on the EC2 instance to use this configuration and start collecting logs.
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208157113-ee77689b-d64e-4ccd-a9b6-670f3e9536f7.png)
+
+
+  Under Command parameters:
+Set Action to Configure.
+Set Mode to ec2.
+Set Optional Configuration Source to ssm.
+Set Optional Configuration Location to the name of the parameter you created in Parameter Store. If you used the name provided above, it should be called AmazonCloudWatch-securitylab-cw-config.
+Set Optional Restart to yes.
+  
+![image](https://user-images.githubusercontent.com/103466963/208157167-f26d7221-a951-4b4b-bbb6-709345a868b3.png)
+
+
+  Under Targets:
+Select Choose instances manually.
+You should see a list of running instances. Select the instance that was launched by the CloudFormation template you deployed for this lab. This will be named Security-CW-Lab-Instance.
+Under Output Options, deselect Enable writing to an S3 bucket.
+Choose Run.
+Optionally, in the Targets and outputs areas, select the button next to an instance name and choose View output. Systems Manager should show that the agent was successfully installed in a few seconds.
+Recap: In this section, you started the CloudWatch Agent on your EC2 instance using Systems Manager Run Command. The command ran a shell script on the EC2 instance. This script instructs the CloudWatch agent to use the configuration file stored in Parameter Store, which gives the agent information on where to collect logs from, how often to collect them, and how to store them in CloudWatch. The script instructs the agent to reboot and begin collecting logs. This “enables people to perform actions at a distance” by not directly accessing the instance.
+  
+  
+  
+# GENERATE LOGS
+  
+In order to populate the logs you are collecting, you need to interact with the deployed website. The Apache web server service being used to host your website generates access logs. In the following steps, you will visit the website to generate these access logs.
+
+Go to the CloudFormation console .
+Select the stack you deployed for this lab, called security-cw-lab.
+Click on Outputs, then click on WebsiteURL.
+Refresh the page a few time to generate some activity on your website.
+Repeat steps 1-4, but add /example to the end of the website url. This will generate a 404 error, which is expected.
+Generating these access logs will allow you to explore the ways in which you can inspect and view these logs, as shown in the following sections of this lab.
+
+X
+Lab complete!
+Now that you have completed this lab, make sure to update your Well-Architected review if you have implemented these changes in your workload.
+
+
+  
+  
+# VIEW YOUR CLOUDWATCH LOGS
+  
+Now that the CloudWatch Agent is up and running on your EC2 Instance, let’s go ahead and view those logs and metrics from the Console. CloudWatch is a useful place to view logs because it is centralized, meaning you can switch between examining logs from many sources.
+
+Viewing Logs:
+
+Open the CloudWatch console .
+On the left side menu, choose Log groups under Logs. On that screen, enter securitylablogs in the search bar. Click on the log group that appears in the results.
+  
+![image](https://user-images.githubusercontent.com/103466963/208157704-a8348773-4a6a-4a96-a406-27be974ef7c4.png)
+
+You will see these log streams: cw-agent-logs, apache-access-logs, apache-error-logs, yum-logs, and ssh-logs. Click through all of them to view the logs from each of these services.
+  
+![image](https://user-images.githubusercontent.com/103466963/208157751-0ddbdffb-9632-459c-ab38-ba53800098a8.png)
+
+  You should see a record of log events. This is the data being collected on your EC2 instance, and then sent to CloudWatch by the CloudWatch Agent installed on the instance.
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208157818-0206f30b-7062-47f8-a3dc-4b75dfa7ddba.png)
+
+Recap: In this section, you explored log files generated by your EC2 instance in the CloudWatch console. The CloudWatch console provides a unified location to view a variety of logs, enabling you to investigate or monitor security activity in a central location. Using the CloudWatch console illustrates the security best practice of “analyzing logs, findings, and metrics centrally”.
+  
+
+  
+  
+# EXPORT LOGS TO S3
+  
+After collecting logs, you may want to export logs from CloudWatch to an S3 Bucket. This is useful as storing data in S3 is more cost effective and reliable than storing it in CloudWatch, making S3 a good option for long-term storage and archival of log files.
+
+Open up the CloudWatch console .
+On the left side menu, choose Log groups under Logs. On that screen, enter securitylablogs in the search bar. Click on the log group that appears in the results.
+Click Actions and Export data to Amazon S3 in the top menu.
+  
+![image](https://user-images.githubusercontent.com/103466963/208158020-8c9d6e07-fcec-48b5-8afb-1adc28e6afda.png)
+
+You will have to fill out information about what data to export.
+
+In the From field, set the YYYY/MM/DD field to today’s date (the date you are doing this lab). This is the earliest creation date of logs you want to export.
+In the To field, set set the YYYY/MM/DD field to tomorrow’s date (the date after the day you are doing this lab). This is the latest creation date of logs you want to export.
+Leave the Stream prefix field blank, as we want to export all logs. This field allows you to select which logs you want to export.
+Set S3BucketName to the bucket name you entered in your CloudFormation stack, likely wa-lab-<your-account-id>-<date>. This is the bucket your logs will be exported to.
+Set S3 bucket prefix to lablogs. This is the subdirectory your exported logs will be stored in.
+Click Export
+
+Click on the View export tasks in the pop up box that appears. This will bring you to a list of Export tasks performed from CloudWatch
+
+![image](https://user-images.githubusercontent.com/103466963/208158109-5d9de90d-3af8-4e4b-9e26-d8ba15b418cc.png)
+
+Click the radio bubble next to the most recent export. Click View in Amazon S3 to open these logs in the S3 bucket you created.
+
+![image](https://user-images.githubusercontent.com/103466963/208158183-27053346-f791-40bf-9622-f1b51994f7ea.png)
+
+ You should now see folders corresponding to all of the log streams you viewed earlier. You can explore these logs and download the .gz files if you’d like to see their contents.
+Recap: In this portion of the lab, you exported logs from CloudWatch to S3, a good way to archive logs for long term storage. This demonstrates an important component of the security best practice of “configuring logging centrally” - the ability to extract meaningful insights from large volumes of log data. Compared with CloudWatch, storing log files in S3 is more cost-effective and allows you to use lifecycle policies on your stored logs. As the volume of logs generated by your workloads increase, so does the value of storing these data in S3. It also enables you to analyze logs from Athena, as you will see in the next section.
+  
+  
+  
+  
+# QUERY LOGS FROM S3 USING ATHENA
+  
+With your log data now stored in S3, you will utilize Amazon Athena - a serverless interactive query service. You will run SQL queries on your log files to extract information from them. In this section, we will focus on the Apache access logs, although Athena can be used to query any of your log files. It is possible to query your log data from CloudWatch Insights, however, Athena querying allows you to pull data from files stored in S3, as well as other sources, where Insights only allows to query data in CloudWatch. Athena supports SQL querying - an industry standard language.
+
+Open up the Athena console .
+
+If this is the first time you are using Athena:
+
+Click Get Started to go to the Query Editor.
+Set up a query result location by clicking the link that appears at the top of the page.
+If this is not the first time you are using Athena:
+
+Set up a query result location by clicking Settings in the top right corner of the page.
+Enter the following into the Query result location field, replacing REPLACE_ME_BUCKETNAME with the name of the S3 bucket you created, likely wa-lab-<your-account-id>-<date>.
+
+s3://REPLACE_ME_BUCKETNAME/athenaqueries/
+
+Click Save.
+
+  ![image](https://user-images.githubusercontent.com/103466963/208159685-902ff3ff-8726-4178-91c3-bd774fe6759f.png)
+
+  You should now see the blank query editor, as seen in the image below. This is where you will enter SQL queries to manipulate and extract information from your log files.
+  
+  ![image](https://user-images.githubusercontent.com/103466963/208159746-542c0845-9038-4bec-9208-963df7066d40.png)
+
+Enter the following command in “New query 1” box to create a new Database , which will hold the Table containing our log data. This command creates a database called security_lab_logs.
+  
+ # CREATE database security_lab_logs
+  
+Press Run query to execute this command. Once complete, you should see Query successful. displayed in the results box.
+On the left side menu, click the dropdown under Database and select the newly created database called security_lab_logs.
+  
+  
